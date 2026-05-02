@@ -26,6 +26,12 @@ uploads/
 *.swp
 *.swo
 
+# Playwright MCP artifacts (screenshots, console logs)
+.playwright-mcp/
+
+# pytest cache
+.pytest_cache/
+
 # Local-only notes (not for commit)
 CLAUDE.local.md
 *.local.md
