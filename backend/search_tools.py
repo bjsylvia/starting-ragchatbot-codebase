@@ -117,6 +117,72 @@ class CourseSearchTool(Tool):
 
         return "\n\n".join(formatted)
 
+
+class CourseOutlineTool(Tool):
+    """Tool for fetching a course's outline: title, link, and full lesson list."""
+
+    def __init__(self, vector_store: VectorStore):
+        self.store = vector_store
+        self.last_sources = []
+
+    def get_tool_definition(self) -> Dict[str, Any]:
+        return {
+            "name": "get_course_outline",
+            "description": (
+                "Get the outline of a course — returns the course title, course link, "
+                "and the full ordered list of lessons (lesson number + title). "
+                "Use for questions about a course's structure, lesson list, or table of contents."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "course_name": {
+                        "type": "string",
+                        "description": "Course title. Partial matches work (e.g. 'MCP', 'Introduction').",
+                    }
+                },
+                "required": ["course_name"],
+            },
+        }
+
+    def execute(self, course_name: str) -> str:
+        import json
+
+        self.last_sources = []
+
+        resolved = self.store._resolve_course_name(course_name)
+        if not resolved:
+            return f"No course found matching '{course_name}'."
+
+        try:
+            results = self.store.course_catalog.get(ids=[resolved])
+        except Exception as e:
+            return f"Error fetching course outline: {e}"
+
+        if not results or not results.get("metadatas"):
+            return f"No course found matching '{course_name}'."
+
+        metadata = results["metadatas"][0]
+        title = metadata.get("title", resolved)
+        course_link = metadata.get("course_link")
+        lessons_json = metadata.get("lessons_json")
+        lessons = json.loads(lessons_json) if lessons_json else []
+        lessons.sort(key=lambda l: l.get("lesson_number", 0))
+
+        lines = [f"Course: {title}", f"Link: {course_link or 'N/A'}", "Lessons:"]
+        if lessons:
+            for lesson in lessons:
+                num = lesson.get("lesson_number")
+                lesson_title = lesson.get("lesson_title", "")
+                lines.append(f"- Lesson {num}: {lesson_title}")
+        else:
+            lines.append("(no lessons recorded)")
+
+        self.last_sources = [{"text": title, "link": course_link}]
+
+        return "\n".join(lines)
+
+
 class ToolManager:
     """Manages available tools for the AI"""
     
