@@ -121,13 +121,17 @@ class RAGSystem:
             history = self.session_manager.get_conversation_history(session_id)
         
         # Generate response using AI with tools
-        response = self.ai_generator.generate_response(
-            query=prompt,
-            conversation_history=history,
-            tools=self.tool_manager.get_tool_definitions(),
-            tool_manager=self.tool_manager
-        )
-        
+        try:
+            response = self.ai_generator.generate_response(
+                query=prompt,
+                conversation_history=history,
+                tools=self.tool_manager.get_tool_definitions(),
+                tool_manager=self.tool_manager
+            )
+        except Exception as e:
+            self.tool_manager.reset_sources()
+            return (f"Sorry, something went wrong while answering that: {e}", [])
+
         # Get sources from the search tool
         sources = self.tool_manager.get_last_sources()
 

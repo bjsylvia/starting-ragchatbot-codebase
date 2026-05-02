@@ -85,9 +85,19 @@ Provide only the direct answer to what was asked.
         # Handle tool execution if needed
         if response.stop_reason == "tool_use" and tool_manager:
             return self._handle_tool_execution(response, api_params, tool_manager)
-        
+
         # Return direct response
-        return response.content[0].text
+        return self._extract_text(response)
+
+    @staticmethod
+    def _extract_text(response) -> str:
+        """Safely pull text from the first content block. Protects against
+        empty content arrays and non-text leading blocks (e.g. a trailing
+        tool_use without a text companion)."""
+        for block in getattr(response, "content", []) or []:
+            if getattr(block, "type", None) == "text":
+                return getattr(block, "text", "") or ""
+        return ""
     
     def _handle_tool_execution(self, initial_response, base_params: Dict[str, Any], tool_manager):
         """
@@ -111,11 +121,14 @@ Provide only the direct answer to what was asked.
         tool_results = []
         for content_block in initial_response.content:
             if content_block.type == "tool_use":
-                tool_result = tool_manager.execute_tool(
-                    content_block.name, 
-                    **content_block.input
-                )
-                
+                try:
+                    tool_result = tool_manager.execute_tool(
+                        content_block.name,
+                        **content_block.input
+                    )
+                except Exception as e:
+                    tool_result = f"Tool error: {e}"
+
                 tool_results.append({
                     "type": "tool_result",
                     "tool_use_id": content_block.id,
@@ -135,4 +148,4 @@ Provide only the direct answer to what was asked.
         
         # Get final response
         final_response = self.client.messages.create(**final_params)
-        return final_response.content[0].text
+        return self._extract_text(final_response)
