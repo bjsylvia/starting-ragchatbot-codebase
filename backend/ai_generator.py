@@ -1,3 +1,4 @@
+import os
 import anthropic
 from typing import List, Optional, Dict, Any
 
@@ -36,9 +37,10 @@ Provide only the direct answer to what was asked.
         # Pre-build base API parameters
         self.base_params = {
             "model": self.model,
-            "temperature": 0,
             "max_tokens": 800
         }
+        if os.getenv("ANTHROPIC_DISABLE_TEMPERATURE") != "1":
+            self.base_params["temperature"] = 0
     
     def generate_response(self, query: str,
                          conversation_history: Optional[str] = None,

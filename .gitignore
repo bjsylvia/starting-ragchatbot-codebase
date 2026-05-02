@@ -26,6 +26,10 @@ uploads/
 *.swp
 *.swo
 
+# Local-only notes (not for commit)
+CLAUDE.local.md
+*.local.md
+
 # OS
 .DS_Store
 Thumbs.db
