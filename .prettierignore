@@ -1,0 +1,31 @@
+# Scope: Prettier runs on frontend only.
+# Everything below is out of scope.
+
+# Python backend and tooling
+backend/
+*.py
+pyproject.toml
+uv.lock
+.python-version
+.venv/
+
+# Course materials / data
+docs/
+chroma_db/
+backend/chroma_db/
+
+# Dependencies and local state
+node_modules/
+.trees/
+.claude/
+
+# Environment and local-only files
+.env
+.env.example
+CLAUDE.local.md
+*.local.md
+
+# Docs and lockfiles — leave formatting as-authored
+*.md
+*.lock
+package-lock.json

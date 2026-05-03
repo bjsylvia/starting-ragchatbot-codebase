@@ -37,15 +37,26 @@ function applyTheme(theme) {
     if (themeToggle) {
         const isLight = theme === 'light';
         themeToggle.setAttribute('aria-checked', String(isLight));
-        themeToggle.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
-        themeToggle.setAttribute('title', isLight ? 'Switch to dark theme' : 'Switch to light theme');
+        themeToggle.setAttribute(
+            'aria-label',
+            isLight ? 'Switch to dark theme' : 'Switch to light theme'
+        );
+        themeToggle.setAttribute(
+            'title',
+            isLight ? 'Switch to dark theme' : 'Switch to light theme'
+        );
     }
 }
 
 function initTheme() {
     let saved = null;
-    try { saved = localStorage.getItem(THEME_STORAGE_KEY); } catch (e) { /* ignore */ }
-    const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    try {
+        saved = localStorage.getItem(THEME_STORAGE_KEY);
+    } catch (e) {
+        /* ignore */
+    }
+    const prefersLight =
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
     const theme = saved || (prefersLight ? 'light' : 'dark');
     applyTheme(theme);
 }
@@ -54,7 +65,11 @@ function toggleTheme() {
     const isLight = document.documentElement.getAttribute('data-theme') === 'light';
     const next = isLight ? 'dark' : 'light';
     applyTheme(next);
-    try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch (e) { /* ignore */ }
+    try {
+        localStorage.setItem(THEME_STORAGE_KEY, next);
+    } catch (e) {
+        /* ignore */
+    }
 }
 
 // Event Listeners
@@ -74,7 +89,7 @@ function setupEventListeners() {
     }
 
     // Suggested questions
-    document.querySelectorAll('.suggested-item').forEach(button => {
+    document.querySelectorAll('.suggested-item').forEach((button) => {
         button.addEventListener('click', (e) => {
             const question = e.target.getAttribute('data-question');
             chatInput.value = question;
@@ -82,7 +97,6 @@ function setupEventListeners() {
         });
     });
 }
-
 
 // Chat Functions
 async function sendMessage() {
@@ -106,7 +120,7 @@ async function sendMessage() {
         const response = await fetch(`${API_URL}/query`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 query: query,
@@ -117,7 +131,7 @@ async function sendMessage() {
         if (!response.ok) throw new Error('Query failed');
 
         const data = await response.json();
-        
+
         // Update session ID if new
         if (!currentSessionId) {
             currentSessionId = data.session_id;
@@ -126,7 +140,6 @@ async function sendMessage() {
         // Replace loading message with response
         loadingMessage.remove();
         addMessage(data.answer, 'assistant', data.sources);
-
     } catch (error) {
         // Replace loading message with error
         loadingMessage.remove();
@@ -158,19 +171,21 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}${isWelcome ? ' welcome-message' : ''}`;
     messageDiv.id = `message-${messageId}`;
-    
+
     // Convert markdown to HTML for assistant messages
     const displayContent = type === 'assistant' ? marked.parse(content) : escapeHtml(content);
-    
+
     let html = `<div class="message-content">${displayContent}</div>`;
-    
+
     if (sources && sources.length > 0) {
-        const rendered = sources.map(s => {
-            const label = escapeHtml(s.text);
-            return s.link
-                ? `<a href="${escapeHtml(s.link)}" target="_blank" rel="noopener noreferrer">${label}</a>`
-                : `<span>${label}</span>`;
-        }).join('');
+        const rendered = sources
+            .map((s) => {
+                const label = escapeHtml(s.text);
+                return s.link
+                    ? `<a href="${escapeHtml(s.link)}" target="_blank" rel="noopener noreferrer">${label}</a>`
+                    : `<span>${label}</span>`;
+            })
+            .join('');
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
@@ -178,11 +193,11 @@ function addMessage(content, type, sources = null, isWelcome = false) {
             </details>
         `;
     }
-    
+
     messageDiv.innerHTML = html;
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     return messageId;
 }
 
@@ -198,7 +213,12 @@ function escapeHtml(text) {
 async function createNewSession() {
     currentSessionId = null;
     chatMessages.innerHTML = '';
-    addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+    addMessage(
+        'Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?',
+        'assistant',
+        null,
+        true
+    );
 }
 
 async function startNewChat() {
@@ -207,7 +227,9 @@ async function startNewChat() {
     chatInput.focus();
     if (oldSessionId) {
         try {
-            await fetch(`${API_URL}/session/${encodeURIComponent(oldSessionId)}`, { method: 'DELETE' });
+            await fetch(`${API_URL}/session/${encodeURIComponent(oldSessionId)}`, {
+                method: 'DELETE'
+            });
         } catch (error) {
             console.error('Failed to delete previous session:', error);
         }
@@ -220,26 +242,25 @@ async function loadCourseStats() {
         console.log('Loading course stats...');
         const response = await fetch(`${API_URL}/courses`);
         if (!response.ok) throw new Error('Failed to load course stats');
-        
+
         const data = await response.json();
         console.log('Course data received:', data);
-        
+
         // Update stats in UI
         if (totalCourses) {
             totalCourses.textContent = data.total_courses;
         }
-        
+
         // Update course titles
         if (courseTitles) {
             if (data.course_titles && data.course_titles.length > 0) {
                 courseTitles.innerHTML = data.course_titles
-                    .map(title => `<div class="course-title-item">${title}</div>`)
+                    .map((title) => `<div class="course-title-item">${title}</div>`)
                     .join('');
             } else {
                 courseTitles.innerHTML = '<span class="no-courses">No courses available</span>';
             }
         }
-        
     } catch (error) {
         console.error('Error loading course stats:', error);
         // Set default values on error

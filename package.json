@@ -1,0 +1,12 @@
+{
+    "name": "starting-codebase-frontend-tooling",
+    "private": true,
+    "description": "Frontend code-quality tooling (Prettier). Backend Python is managed by uv and unrelated to this package.json.",
+    "scripts": {
+        "format": "prettier --write \"frontend/**/*.{html,css,js}\"",
+        "format:check": "prettier --check \"frontend/**/*.{html,css,js}\""
+    },
+    "devDependencies": {
+        "prettier": "^3.3.3"
+    }
+}

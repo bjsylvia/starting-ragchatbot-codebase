@@ -1,5 +1,7 @@
 /* Modern CSS Reset */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -26,7 +28,7 @@
 }
 
 /* Light theme */
-:root[data-theme="light"] {
+:root[data-theme='light'] {
     --primary-color: #2563eb;
     --primary-hover: #1d4ed8;
     --background: #ffffff;
@@ -46,7 +48,8 @@
 
 /* Base Styles */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background-color: var(--background);
     color: var(--text-primary);
     line-height: 1.6;
@@ -54,7 +57,9 @@ body {
     overflow: hidden;
     margin: 0;
     padding: 0;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
 }
 
 /* Apply smooth theme transitions to themeable surfaces */
@@ -70,7 +75,10 @@ body {
 .suggested-item,
 .sources-content a,
 .sources-content span {
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease;
 }
 
 /* Container - Full Screen */
@@ -297,7 +305,10 @@ header h1 {
     text-decoration: none;
     font-size: 0.75rem;
     line-height: 1.3;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
 }
 
 .sources-content a:hover,
@@ -323,9 +334,15 @@ header h1 {
     font-weight: 600;
 }
 
-.message-content h1 { font-size: 1.5rem; }
-.message-content h2 { font-size: 1.3rem; }
-.message-content h3 { font-size: 1.1rem; }
+.message-content h1 {
+    font-size: 1.5rem;
+}
+.message-content h2 {
+    font-size: 1.3rem;
+}
+.message-content h3 {
+    font-size: 1.1rem;
+}
 
 .message-content p {
     margin: 0.5rem 0;
@@ -484,7 +501,9 @@ header h1 {
 }
 
 @keyframes bounce {
-    0%, 80%, 100% {
+    0%,
+    80%,
+    100% {
         transform: scale(0);
     }
     40% {
@@ -689,7 +708,9 @@ details[open] .suggested-header::before {
     padding-top: 0.25rem;
 }
 
-.no-courses, .loading, .error {
+.no-courses,
+.loading,
+.error {
     font-size: 0.85rem;
     color: var(--text-secondary);
     font-style: italic;
@@ -747,9 +768,12 @@ details[open] .suggested-header::before {
     border-radius: 9999px;
     cursor: pointer;
     box-shadow: var(--shadow);
-    transition: background-color 0.3s ease, color 0.3s ease,
-                border-color 0.3s ease, transform 0.2s ease,
-                box-shadow 0.2s ease;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .theme-toggle:hover {
@@ -773,7 +797,9 @@ details[open] .suggested-header::before {
 .theme-toggle-icon {
     position: absolute;
     display: block;
-    transition: opacity 0.3s ease, transform 0.4s ease;
+    transition:
+        opacity 0.3s ease,
+        transform 0.4s ease;
 }
 
 /* Dark theme (default): moon visible, sun hidden */
@@ -788,12 +814,12 @@ details[open] .suggested-header::before {
 }
 
 /* Light theme: sun visible, moon hidden */
-:root[data-theme="light"] .theme-toggle-sun {
+:root[data-theme='light'] .theme-toggle-sun {
     opacity: 1;
     transform: rotate(0deg) scale(1);
 }
 
-:root[data-theme="light"] .theme-toggle-moon {
+:root[data-theme='light'] .theme-toggle-moon {
     opacity: 0;
     transform: rotate(90deg) scale(0.5);
 }
@@ -801,11 +827,20 @@ details[open] .suggested-header::before {
 /* Respect reduced-motion users */
 @media (prefers-reduced-motion: reduce) {
     body,
-    .sidebar, .main-content, .chat-main, .chat-container,
-    .chat-messages, .chat-input-container, .message-content,
-    #chatInput, .stat-item, .suggested-item,
-    .sources-content a, .sources-content span,
-    .theme-toggle, .theme-toggle-icon {
+    .sidebar,
+    .main-content,
+    .chat-main,
+    .chat-container,
+    .chat-messages,
+    .chat-input-container,
+    .message-content,
+    #chatInput,
+    .stat-item,
+    .suggested-item,
+    .sources-content a,
+    .sources-content span,
+    .theme-toggle,
+    .theme-toggle-icon {
         transition: none;
     }
 }
@@ -815,7 +850,7 @@ details[open] .suggested-header::before {
     .main-content {
         flex-direction: column;
     }
-    
+
     .sidebar {
         width: 100%;
         border-right: none;
@@ -824,63 +859,63 @@ details[open] .suggested-header::before {
         order: 2;
         max-height: 40vh;
     }
-    
+
     .sidebar::-webkit-scrollbar {
         width: 8px;
     }
-    
+
     .sidebar::-webkit-scrollbar-track {
         background: var(--surface);
     }
-    
+
     .sidebar::-webkit-scrollbar-thumb {
         background: var(--border-color);
         border-radius: 4px;
     }
-    
+
     .sidebar::-webkit-scrollbar-thumb:hover {
         background: var(--text-secondary);
     }
-    
+
     .chat-main {
         order: 1;
     }
-    
+
     header {
         padding: 1rem;
     }
-    
+
     header h1 {
         font-size: 1.5rem;
     }
-    
+
     .chat-messages {
         padding: 1rem;
     }
-    
+
     .message {
         max-width: 90%;
     }
-    
+
     .chat-input-container {
         padding: 1rem;
         gap: 0.5rem;
     }
-    
+
     #chatInput {
         padding: 0.75rem 1rem;
         font-size: 0.9rem;
     }
-    
+
     #sendButton {
         padding: 0.75rem 1rem;
         min-width: 48px;
     }
-    
+
     .stat-value {
         font-size: 1.25rem;
     }
-    
+
     .suggested-item {
         padding: 0.5rem 0.75rem;
         font-size: 0.8rem;

@@ -179,3 +179,100 @@ Adds a light/dark theme toggle button fixed in the top-right corner of the app.
   the main dev server will only show the changes once merged. The logic was
   verified against the same files via a temporary static server.
 - No backend changes; no new dependencies; no build step.
+
+---
+
+# Frontend changes: Prettier-based quality tooling
+
+## What this PR does
+
+Adds Prettier to the repo to enforce consistent formatting on the frontend (`frontend/*.html`, `*.css`, `*.js`). Adds two dev scripts — `scripts/format.sh` (writes fixes) and `scripts/quality.sh` (check-only, non-zero exit on drift). Runs one initial reformat pass across the three frontend files so the tree is already conformant.
+
+The original task mentioned `black`; `black` is a Python formatter and this task was scoped to frontend only, so Prettier (the JS/CSS/HTML equivalent) was used instead.
+
+## Scope
+
+**Frontend only.** Backend Python is untouched:
+
+- `pyproject.toml`, `uv.lock`, `backend/**`, `main.py`, `run.sh` — unmodified
+- `.prettierignore` blocks Prettier from ever formatting `backend/`, `*.py`, `docs/`, `*.md`, `uv.lock`, `.venv/`, `.trees/`, `.claude/`, `node_modules/`
+
+## Files added
+
+| File | Purpose |
+|------|---------|
+| `package.json` | `private: true`, one devDep (`prettier ^3.3.3`), `format` / `format:check` npm scripts |
+| `package-lock.json` | Pins Prettier exactly (3.8.3) — committed for reproducibility, same reason `uv.lock` is committed for Python |
+| `.prettierrc.json` | Prettier config tuned to match existing style: 4-space indent, single quotes in JS, semicolons, no trailing commas, print width 100, LF line endings |
+| `.prettierignore` | Excludes everything non-frontend |
+| `scripts/format.sh` | Writes Prettier fixes in place. Executable. |
+| `scripts/quality.sh` | Check-only; exits non-zero on drift. Suitable for wiring into CI later. Executable. |
+
+## Files modified
+
+| File | Change |
+|------|--------|
+| `.gitignore` | Adds `node_modules/` |
+| `frontend/index.html` | Reformatted (see below) |
+| `frontend/script.js` | Reformatted (see below) |
+| `frontend/style.css` | Reformatted (see below) |
+
+## What the initial reformat actually changed
+
+This was a bigger diff than planned — 173 insertions / 123 deletions across the three files — because Prettier's defaults for HTML/CSS/JS make more changes than just whitespace-trimming. None of the changes are semantic; the rendered page and the runtime behavior are identical. Summary:
+
+### `frontend/index.html`
+- `<!DOCTYPE html>` → `<!doctype html>` (lowercased — Prettier default)
+- Children of `<html>` now indented one level (so `<head>` and `<body>` sit inside the `<html>` block)
+- Void elements get self-closing slashes: `<meta />`, `<link />`, `<br />`
+- Trailing newline added
+
+### `frontend/script.js`
+- Single-arg arrow callbacks get parens: `x => ...` → `(x) => ...`
+- Long lines split across multiple lines (welcome-message call, `.map(...).join('')` chain, `fetch(..., { method: 'DELETE' })`)
+- Redundant blank lines inside blocks collapsed
+- Trailing whitespace stripped
+- Final newline added
+- Trailing comma after last object key removed (matches `trailingComma: "none"` config)
+
+### `frontend/style.css`
+- Multiple-selector rules split one-per-line: `*, *::before, *::after` → three lines
+- Long `font-family` / `transition` values wrapped with hanging indent
+- Single-line rules like `.message-content h1 { font-size: 1.5rem; }` expanded to multi-line form
+
+## How to use
+
+From the repo root:
+
+```bash
+# One-time setup
+npm install
+
+# Format everything (rewrites files in place)
+./scripts/format.sh
+
+# Check everything is formatted — exits non-zero on drift
+./scripts/quality.sh
+```
+
+Also works via npm:
+
+```bash
+npm run format        # equivalent to format.sh
+npm run format:check  # equivalent to quality.sh
+```
+
+## Verification performed
+
+- `./scripts/format.sh` reformatted three files on first run.
+- `./scripts/format.sh` on second run: all three files report `unchanged` — idempotent.
+- `./scripts/quality.sh` exits 0.
+- `git diff` touches **zero** files under `backend/` — scope is honored.
+- Dev server on port 8000 still responds 200 on `/` and `/script.js` after the reformat (the reformat is whitespace/cosmetic and doesn't change anything browsers or the FastAPI `StaticFiles` mount care about).
+
+## Not included (potential follow-ups)
+
+- No ESLint / Stylelint / HTMLHint — this change is formatting, not linting.
+- No pre-commit hook — can be added via `husky` + `lint-staged` later.
+- No GitHub Actions workflow running `quality.sh` in CI — the script is ready for it when wanted.
+- No `black` / Python-side tooling — intentionally out of scope per the frontend-only restriction.

@@ -32,6 +32,9 @@ uploads/
 # pytest cache
 .pytest_cache/
 
+# Frontend tooling (Prettier)
+node_modules/
+
 # Local-only notes (not for commit)
 CLAUDE.local.md
 *.local.md
