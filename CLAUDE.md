@@ -23,6 +23,8 @@ Install dependencies:
 uv sync
 ```
 
+**The dev server is managed by the user, not Claude.** Do not start, stop, or restart it yourself — assume one is already running on port 8000 for verification, and ask before killing it if a restart seems necessary.
+
 Run the server (serves API + static frontend on port 8000):
 ```bash
 ./run.sh
