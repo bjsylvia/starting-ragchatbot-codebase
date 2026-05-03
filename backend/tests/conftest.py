@@ -172,3 +172,139 @@ def _clean_env(monkeypatch):
     """Ensure ANTHROPIC_DISABLE_TEMPERATURE is deterministic per test.
     Tests that care about this explicitly set it."""
     monkeypatch.delenv("ANTHROPIC_DISABLE_TEMPERATURE", raising=False)
+
+
+# ---------- API-layer fixtures ----------
+#
+# The real backend/app.py mounts ../frontend at "/" via StaticFiles and
+# constructs a RAGSystem at import time (which boots ChromaDB +
+# sentence-transformers). Both are hostile to unit tests, so we build a
+# miniature FastAPI app inline that mirrors the real endpoints but talks
+# to a stub rag_system. This keeps the API tests hermetic and fast.
+
+
+class StubRAGSystem:
+    """Records calls so tests can assert what the endpoint forwarded.
+    Defaults are happy-path; tests override per-case."""
+
+    def __init__(self):
+        self.query_calls: List[Dict[str, Any]] = []
+        self.next_answer: str = "stub answer"
+        self.next_sources: List[Dict[str, Any]] = []
+        self.query_raises: Optional[Exception] = None
+
+        self.analytics: Dict[str, Any] = {
+            "total_courses": 0,
+            "course_titles": [],
+        }
+        self.analytics_raises: Optional[Exception] = None
+
+        self.session_manager = SimpleNamespace(
+            sessions={},
+            create_session=self._create_session,
+        )
+        self._session_counter = 0
+
+    def _create_session(self) -> str:
+        self._session_counter += 1
+        sid = f"test-session-{self._session_counter}"
+        self.session_manager.sessions[sid] = []
+        return sid
+
+    def query(self, query: str, session_id: Optional[str] = None):
+        self.query_calls.append({"query": query, "session_id": session_id})
+        if self.query_raises:
+            raise self.query_raises
+        return self.next_answer, list(self.next_sources)
+
+    def get_course_analytics(self):
+        if self.analytics_raises:
+            raise self.analytics_raises
+        return self.analytics
+
+
+def _build_test_app(rag):
+    """Construct a FastAPI app with the same endpoints as backend/app.py
+    but without the static-file mount and without importing app.py
+    (which would eagerly build a real RAGSystem).
+    """
+    from fastapi import FastAPI, HTTPException, Response
+    from fastapi.middleware.cors import CORSMiddleware
+    from pydantic import BaseModel
+
+    app = FastAPI(title="Course Materials RAG System (test)")
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    class QueryRequest(BaseModel):
+        query: str
+        session_id: Optional[str] = None
+
+    class SourceItem(BaseModel):
+        text: str
+        link: Optional[str] = None
+
+    class QueryResponse(BaseModel):
+        answer: str
+        sources: List[SourceItem]
+        session_id: str
+
+    class CourseStats(BaseModel):
+        total_courses: int
+        course_titles: List[str]
+
+    @app.post("/api/query", response_model=QueryResponse)
+    async def query_documents(request: QueryRequest):
+        try:
+            session_id = request.session_id or rag.session_manager.create_session()
+            answer, sources = rag.query(request.query, session_id)
+            return QueryResponse(answer=answer, sources=sources, session_id=session_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.delete("/api/session/{session_id}", status_code=204)
+    async def delete_session(session_id: str):
+        try:
+            rag.session_manager.sessions.pop(session_id, None)
+            return Response(status_code=204)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/courses", response_model=CourseStats)
+    async def get_course_stats():
+        try:
+            analytics = rag.get_course_analytics()
+            return CourseStats(
+                total_courses=analytics["total_courses"],
+                course_titles=analytics["course_titles"],
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # Stand-in for the real static mount so GET "/" is still exercised in
+    # tests without needing a frontend/ directory.
+    @app.get("/")
+    async def root():
+        return {"status": "ok", "service": "rag-test"}
+
+    return app
+
+
+@pytest.fixture
+def stub_rag():
+    return StubRAGSystem()
+
+
+@pytest.fixture
+def api_client(stub_rag):
+    from fastapi.testclient import TestClient
+
+    app = _build_test_app(stub_rag)
+    with TestClient(app) as client:
+        yield client
